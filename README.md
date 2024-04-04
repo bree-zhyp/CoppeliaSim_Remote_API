@@ -59,7 +59,7 @@ python simpleSynchronousTest.py
 python main.py
 ```
 ## 运行结果展示
-<img src="figure/video.gif" alt="运动示意">
+<img src="figure/video-online-video-cuttercom.gif" alt="运动示意">
 
 ## 作者
 [Yupeng Zhang](https://github.com/SYSU-Zhangyp)

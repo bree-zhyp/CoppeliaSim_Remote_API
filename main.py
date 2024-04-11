@@ -41,6 +41,8 @@ current_time = -1
 # 尝试关闭所有的已开启的连接，开始运行program
 print ('Program started')
 sim.simxFinish(-1) # just in case, close all opened connections
+after_runtime = 0
+before_runtime = 0
 
 # 连接到CoppeliaSim的远程API服务器
 clientID=sim.simxStart('127.0.0.1',19997,True,True,5000,5) # Connect to CoppeliaSim
@@ -73,6 +75,7 @@ if clientID!=-1:
         sim.simxFinish(clientID)  
         sys.exit(1)  # 退出程序
 
+    before_runtime = time.time()
     # start the simulation: 开始仿真
     sim.simxStartSimulation(clientID,sim.simx_opmode_blocking)
 
@@ -82,8 +85,8 @@ if clientID!=-1:
     # Now step a few times: 仿真步进1000步
     for i in range(1,1000):
         # 设定初始速度
-        sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_streaming)
-        sim.simxSetJointTargetVelocity(clientID, right_jointHandle, targetVelocity, sim.simx_opmode_streaming)
+        sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_blocking)
+        sim.simxSetJointTargetVelocity(clientID, right_jointHandle, targetVelocity, sim.simx_opmode_blocking)
 
         # 获取上一个命令的时间以及延迟时间
         lastCmdTime = sim.simxGetLastCmdTime(clientID)
@@ -107,31 +110,31 @@ if clientID!=-1:
         else:  
             print(f"Failed to read proximity sensor data: {result}")
 
-        print("current_time= ", current_time, "detected_wall_time=", detected_wall_time, "backward_end_time=", backward_end_time)
-        print("turning_end_time= ", turning_end_time, "straight_end_time= ", straight_end_time, "reset_direction_end_time= ", reset_direction_end_time)
+        # print("current_time= ", current_time, "detected_wall_time=", detected_wall_time, "backward_end_time=", backward_end_time)
+        # print("turning_end_time= ", turning_end_time, "straight_end_time= ", straight_end_time, "reset_direction_end_time= ", reset_direction_end_time)
         if current_time >= detected_wall_time and current_time >= backward_end_time and current_time >= turning_end_time and current_time >= straight_end_time and current_time >= reset_direction_end_time:
             print("go straight1!")
-            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_streaming)
-            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, targetVelocity, sim.simx_opmode_streaming)
+            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_blocking)
+            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, targetVelocity, sim.simx_opmode_blocking)
         elif backward_end_time >= current_time:
             print("go back!")
-            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, -targetVelocity, sim.simx_opmode_streaming)
-            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, -targetVelocity, sim.simx_opmode_streaming)
+            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, -targetVelocity, sim.simx_opmode_blocking)
+            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, -targetVelocity, sim.simx_opmode_blocking)
         elif turning_end_time >= current_time:
             print("turn left!")
-            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, -targetVelocity, sim.simx_opmode_streaming)
-            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, 0, sim.simx_opmode_streaming)
+            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, -targetVelocity, sim.simx_opmode_blocking)
+            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, 0, sim.simx_opmode_blocking)
         elif straight_end_time >= current_time:
             print("go straigt2!")
-            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_streaming)
-            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, targetVelocity, sim.simx_opmode_streaming)
+            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_blocking)
+            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, targetVelocity, sim.simx_opmode_blocking)
         elif reset_direction_end_time >= current_time:
             print("turn right!")
-            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_streaming)
-            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, 0, sim.simx_opmode_streaming)
+            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_blocking)
+            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, 0, sim.simx_opmode_blocking)
         else:
-            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_streaming)
-            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, targetVelocity, sim.simx_opmode_streaming)
+            sim.simxSetJointTargetVelocity(clientID, left_jointHandle, targetVelocity, sim.simx_opmode_blocking)
+            sim.simxSetJointTargetVelocity(clientID, right_jointHandle, targetVelocity, sim.simx_opmode_blocking)
         sim.simxSynchronousTrigger(clientID); # 触发同步操作
 
     # stop the simulation: 停止仿真
@@ -140,8 +143,11 @@ if clientID!=-1:
     # Now close the connection to CoppeliaSim: 关闭连接
     sim.simxFinish(clientID) 
 
+    after_runtime = time.time()
+
 # 如果连接API失败的话
 else:
     print ('Failed connecting to remote API server')
 
 print ('Program ended')
+print('while循环持续了', after_runtime-before_runtime)
